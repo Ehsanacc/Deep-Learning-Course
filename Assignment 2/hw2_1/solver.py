@@ -24,8 +24,40 @@ def train(model, criterion, optimizer, train_dataloader, num_epoch, device):
 def train_one_epoch(model, criterion, optimizer, train_dataloader, device):
     batch_train_loss, batch_train_acc = [], []
 
-    #TODO: train the given model for only one batch and store accuracy and loss in batch_train_acc, batch_train_loss repectively.
-    
+    # Train the model for one epoch
+    for inputs, labels in train_dataloader:
+        # Move data to the specified device
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
+        # Convert one-hot labels to class indices if necessary
+        if labels.ndim > 1:
+            labels = labels.argmax(dim=1)
+
+        # Zero the gradients
+        optimizer.zero_grad()
+
+        # Forward pass
+        outputs = model(inputs)
+
+        # Compute the loss
+        loss = criterion(outputs, labels)
+
+        # Backward pass
+        loss.backward()
+
+        # Update the parameters
+        optimizer.step()
+
+        # Compute accuracy
+        _, preds = torch.max(outputs, 1)  # Get the index of the max log-probability
+        corrects = torch.sum(preds == labels).item()
+        accuracy = corrects / inputs.size(0)
+
+        # Store loss and accuracy
+        batch_train_loss.append(loss.item())
+        batch_train_acc.append(accuracy)
+
     return batch_train_loss, batch_train_acc
 
 
@@ -35,7 +67,26 @@ def test(model, test_dataloader, device):
     model.eval()
     batch_test_acc = []
 
-    #TODO: Test the model on the given test dataset and store accuracy in batch_test_acc. This function return nothing.
-    # Remember you should disable gradient computation during testing.
+    # Disable gradient computation during testing
+    with torch.no_grad():
+        for inputs, labels in test_dataloader:
+            # Move data to the specified device
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            # Convert one-hot labels to class indices if necessary
+            if labels.ndim > 1:
+                labels = labels.argmax(dim=1)
+
+            # Forward pass
+            outputs = model(inputs)
+
+            # Compute accuracy
+            _, preds = torch.max(outputs, 1)
+            corrects = torch.sum(preds == labels).item()
+            accuracy = corrects / inputs.size(0)
+
+            # Store accuracy
+            batch_test_acc.append(accuracy)
 
     print(f"The test accuracy is {torch.mean(torch.tensor(batch_test_acc)):.4f}.\n")

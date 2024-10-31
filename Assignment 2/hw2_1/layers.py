@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 """ Fully Connected Layer """
-    
+
 class FCLayer(nn.Module):
     def __init__(self, num_input, num_output):
         """
@@ -33,7 +33,8 @@ class FCLayer(nn.Module):
             Tensor of shape (batch_size, num_output), the output after applying the linear transformation.
         """
         #TODO
-        pass
+        self.X = X
+        return self.X @ self.W + self.b
 
     def backward(self, delta):
         """
@@ -45,7 +46,13 @@ class FCLayer(nn.Module):
             delta_next: Tensor of shape (batch_size, num_input), the gradient to pass to the previous layer.
         """
         #TODO
-        pass
+        # Compute gradients with respect to weights and biases
+        self.W.grad = self.X.t() @ delta  # Gradient w.r.t. weights
+        self.b.grad = delta.sum(dim=0, keepdim=True)  # Gradient w.r.t. biases
+
+        # Compute the gradient to pass to the previous layer
+        delta_next = delta @ self.W.t()
+        return delta_next
 
 
 """ Sigmoid Layer """
@@ -68,7 +75,8 @@ class SigmoidLayer(nn.Module):
             Tensor of shape (batch_size, num_features), the output after applying the Sigmoid function.
         """
         #TODO
-        pass
+        self.Z = torch.sigmoid(X)
+        return self.Z
 
     def backward(self, delta):
         """
@@ -80,7 +88,8 @@ class SigmoidLayer(nn.Module):
             delta_next: Tensor of shape (batch_size, num_features), the gradient to pass to the previous layer.
         """
         #TODO
-        pass
+        delta_next = delta * self.Z * (1 - self.Z)
+        return delta_next
 
 
 """ ReLU Layer """
@@ -103,7 +112,8 @@ class ReLULayer(nn.Module):
             Tensor of shape (batch_size, num_features), the output after applying ReLU (max(0, x)).
         """
         #TODO
-        pass
+        self.X = X
+        return torch.relu(X)
 
     def backward(self, delta):
         """
@@ -115,7 +125,9 @@ class ReLULayer(nn.Module):
             delta_next: Tensor of shape (batch_size, num_features), the gradient to pass to the previous layer.
         """
         #TODO
-        pass
+        grad = (self.X > 0).type(delta.dtype)
+        delta_next = delta * grad
+        return delta_next
 
 
 """ Dropout Layer """
@@ -143,11 +155,13 @@ class DropoutLayer(nn.Module):
             out: Tensor of the same shape as inputs, with dropout applied in training mode.
         """
         if self.training:
-            # TODO: keep neurons with probability (1 - dropout_rate)
-            pass
+            # Create a dropout mask
+            self.mask = (torch.rand_like(inputs) > self.dropout_rate).type(inputs.dtype)
+            # Scale activations (inverted dropout)
+            out = inputs * self.mask / (1 - self.dropout_rate)
         else:
-            #TODO
-            pass
+            # No dropout applied during evaluation
+            out = inputs
         return out
 
     def backward(self, dout):
@@ -160,10 +174,10 @@ class DropoutLayer(nn.Module):
             dout_next: Gradient with respect to the input x.
         """
         if self.training and self.mask is not None:
-            #TODO
-            pass
+            # Apply the dropout mask to the gradients
+            dout_next = dout * self.mask / (1 - self.dropout_rate)
         else:
-            #TODO
-            pass
+            # During evaluation, pass gradients as is
+            dout_next = dout
         return dout_next
 

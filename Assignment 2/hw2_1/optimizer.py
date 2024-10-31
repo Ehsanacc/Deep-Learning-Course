@@ -22,7 +22,12 @@ class SGD:
         # Loop over all parameters (self.params).
         # Update each parameter using the gradient and learning rate.
         # Ensure that gradients are not being tracked during this operation.
-        pass
+        with torch.no_grad():
+            # Loop over all parameters
+            for param in self.params:
+                if param.grad is not None:
+                    # Update each parameter using the gradient and learning rate
+                    param -= self.learning_rate * param.grad
 
     def zero_grad(self):
         """
@@ -31,6 +36,9 @@ class SGD:
         #TODO: Implement gradient zeroing for all parameters. Take these steps:
         # Loop over all parameters (self.params).
         # Zero out the gradient for each parameter.
-        pass
+        for param in self.params:
+            if param.grad is not None:
+                # Zero out the gradient for each parameter
+                param.grad.zero_()
 
 
